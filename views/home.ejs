@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>chat</title>
+  </head>
+
+  <style>
+    *{
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+  .container{
+    width: 100vw;
+    height: 100vh;
+    background-color: rgb(94, 102, 102);
+    padding-top: 30px;
+  }
+
+  .chat__container{
+    width: 100%;
+    max-width: 400px;
+    height: 500px;
+    background-color: rgb(88, 40, 0);
+    margin: 0 auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .container__text{
+    width: 100%;
+    height: 70%;
+    background-color: rgb(0, 0, 0);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: scroll;
+    scroll-behavior: auto;
+  }
+
+  .container__text span{
+    color: white;
+    padding: 4px;
+    border: 1px solid rgb(81, 255, 0);
+    display: block;
+    font-weight: 900;
+    width: auto;
+  }
+
+  .container__input{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-color: rgb(58, 20, 5);
+    padding: 5px;
+    
+  }
+
+
+  .mensagem{
+    resize: none;
+    height: 100px;
+    padding: 5px;
+    font-weight: 900;
+  }
+
+  #usuario{
+    height: 30px;
+    width: 200px;
+    font-size: 1.2rem;
+    font-weight: 900;
+  }
+
+  #btnSend{
+    width: 150px;
+  }
+
+  </style>
+
+  <body>
+    
+
+    <div class="container">
+      <div class="chat__container">
+        <div id="chat" class="container__text">
+
+        </div>
+        <div class="container__input">
+          <input type="text" id="usuario">
+          <textarea id="mensagem" class="mensagem"></textarea>
+          <button onclick="enviar()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+
+    
+    <!--inportação socket.io -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+
+    <!--axios-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.2/axios.min.js"></script>
+
+
+    <script>
+      let socket = io("http://localhost:8080");
+
+      //elementos html
+
+      let mensagem = document.getElementById("mensagem");
+      let usuario = document.getElementById("usuario");
+      let chat = document.getElementById("chat");
+    
+      
+        
+      
+
+      usuario.value = "usuario" + Math.floor(Math.random() * (1000 - 1) + 1);
+
+
+
+      socket.on("disconnect", () => {
+        socket.emit("off", {usuario:"lauricio"});
+      });
+
+      const insertData = (usuario,mensagen) =>{
+          let newChat =  document.createElement("span");
+        newChat.innerHTML = `
+        <p>${usuario}:</p>
+        <p>${mensagen}</p>
+        `
+
+        chat.prepend(newChat);
+      }
+
+
+      const getDataServer = () => {
+        chat.innerHTML = ""
+
+        axios.get("http://localhost:3000/chat")
+        .then(data =>{
+        
+          data.data.forEach(msg =>{
+            insertData(msg.usuario,msg.mensagen);
+          })
+
+        }).catch(erro =>{
+          console.log(erro);
+        })
+     
+      };
+
+      getDataServer()
+
+
+
+      socket.on("resposta",(dados) => {
+        chat.innerHTML = ""
+
+        axios.get("http://localhost:3000/chat")
+        .then(data =>{
+        
+          data.data.forEach(msg =>{
+            insertData(msg.usuario,msg.mensagen);
+          })
+
+        }).catch(erro =>{
+          console.log(erro);
+        })
+     
+      });
+
+      const enviar = () => {
+        const data = {
+          usuario:usuario.value,
+          mensagen:[mensagem.value],
+        }
+
+        
+
+       if(mensagem.value == ""){
+        alert("Escreva Alguma coisa");
+       }else{
+        axios.post("http://localhost:3000/chat",data).then(
+           //envia da mensagem
+          socket.emit("mensagem", {mensagem:mensagem.value, usuario:usuario.value})
+        ).catch(erro =>{
+            console.log(erro);
+        })
+
+       mensagem.value = "";
+       mensagem.focus();
+       }
+       
+      };
+    </script>
+  </body>
+</html>
